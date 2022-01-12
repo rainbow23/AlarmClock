@@ -22,6 +22,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.better.alarm.CHANNEL_ID_HIGH_PRIO
 import com.better.alarm.R
@@ -41,7 +42,11 @@ class NotificationsPlugin(
     private val nm: NotificationManager,
     private val enclosingService: EnclosingService
 ) {
+    val TAG = this.javaClass.simpleName
+
   fun show(alarm: PluginAlarmData, index: Int, startForeground: Boolean) {
+      Log.d(TAG, "show alarm = $alarm, index = $index, startForeground = $startForeground")
+
     /* Close dialogs and window shade */
     mContext.sendBroadcast(Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS))
 
@@ -85,8 +90,10 @@ class NotificationsPlugin(
 
     if (startForeground && isOreo()) {
       logger.debug { "startForeground() for ${alarm.id}" }
+        Log.d(TAG, "startForeground && isOreo()")
       enclosingService.startForeground(index + OFFSET, notification)
     } else {
+        Log.d(TAG, "else")
       logger.debug { "nm.notify() for ${alarm.id}" }
       nm.notify(index + OFFSET, notification)
     }

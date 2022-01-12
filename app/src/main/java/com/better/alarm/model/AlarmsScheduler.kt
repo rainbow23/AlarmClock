@@ -15,6 +15,7 @@
  */
 package com.better.alarm.model
 
+import android.util.Log
 import com.better.alarm.BuildConfig
 import com.better.alarm.configuration.Prefs
 import com.better.alarm.configuration.Store
@@ -33,12 +34,15 @@ class AlarmsScheduler(
     private val calendars: Calendars
 ) : IAlarmsScheduler {
 
-  data class ScheduledAlarm(
+    private val TAG = this.javaClass.simpleName
+
+    data class ScheduledAlarm(
       val id: Int,
       val calendar: Calendar,
       val type: CalendarType,
       val alarmValue: AlarmValue
   ) : Comparable<ScheduledAlarm> {
+      private val TAG = this.javaClass.simpleName
 
     override fun compareTo(other: ScheduledAlarm): Int {
       return this.calendar.compareTo(other.calendar)
@@ -48,6 +52,7 @@ class AlarmsScheduler(
       return "$id $type on ${DATE_FORMAT.format(calendar.time)}"
     }
   }
+  /// end ScheduledAlarm
 
   private val queue: PriorityQueue<ScheduledAlarm> = PriorityQueue()
 
@@ -67,6 +72,7 @@ class AlarmsScheduler(
   }
 
   override fun setAlarm(id: Int, type: CalendarType, calendar: Calendar, alarmValue: AlarmValue) {
+      Log.d(TAG, "setAlarm( id = $id type = $type, calendar = $calendar alarmValue = $alarmValue")
     val scheduledAlarm = ScheduledAlarm(id, calendar, type, alarmValue)
     replaceAlarm(id, scheduledAlarm)
   }
@@ -80,10 +86,12 @@ class AlarmsScheduler(
   }
 
   override fun removeAlarm(id: Int) {
+      Log.d(TAG, "removeAlarm( id = $id")
     replaceAlarm(id, null)
   }
 
   private fun replaceAlarm(id: Int, newAlarm: ScheduledAlarm?) {
+      Log.d(TAG, "replaceAlarm( id = $id, ")
     val prevHead: ScheduledAlarm? = queue.peek()
 
     // remove if we have already an alarm
@@ -121,6 +129,7 @@ class AlarmsScheduler(
    * In this case we remove it from the queue and fire it.
    */
   private fun fireAlarmsInThePast() {
+      Log.d(TAG, "fireAlarmsInThePast()")
     val now = calendars.now()
     while (!queue.isEmpty() && queue.peek()?.calendar?.before(now) == true) {
       // remove happens in fire
@@ -138,6 +147,7 @@ class AlarmsScheduler(
    * the rest.
    */
   private fun notifyListeners() {
+      Log.d(TAG, "notifyListeners()")
     findNextNormalAlarm()
         ?.let { scheduledAlarm: ScheduledAlarm ->
           fun findNormalTime(scheduledAlarm: ScheduledAlarm): Long {
@@ -160,6 +170,7 @@ class AlarmsScheduler(
   }
 
   private fun findNextNormalAlarm(): ScheduledAlarm? {
+      Log.d(TAG, "findNextNormalAlarm():")
     return queue.sorted().firstOrNull { it.type != CalendarType.AUTOSILENCE }
   }
 

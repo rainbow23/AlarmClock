@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.better.alarm.logger.Logger
 import com.better.alarm.presenter.AlarmsListActivity
 import java.util.*
@@ -29,12 +30,14 @@ interface AlarmSetter {
       private val mContext: Context
   ) : AlarmSetter {
     private val setAlarmStrategy: ISetAlarmStrategy
+    private val TAG = "AlarmSetterImpl"
 
     init {
       this.setAlarmStrategy = initSetStrategyForVersion()
     }
 
     override fun removeRTCAlarm() {
+        Log.d(TAG, "removeRTCAlarm()")
       log.debug { "Removed all alarms" }
       val pendingAlarm =
           PendingIntent.getBroadcast(
@@ -49,7 +52,7 @@ interface AlarmSetter {
     }
 
     override fun setUpRTCAlarm(id: Int, typeName: String, calendar: Calendar) {
-      log.debug { "Set $id ($typeName) on ${AlarmsScheduler.DATE_FORMAT.format(calendar.time)}" }
+      log.debug { "setUpRTCAlarm( Set $id ($typeName) on ${AlarmsScheduler.DATE_FORMAT.format(calendar.time)}" }
       val pendingAlarm =
           Intent(ACTION_FIRED)
               .apply {
@@ -108,19 +111,34 @@ interface AlarmSetter {
 
     private fun initSetStrategyForVersion(): ISetAlarmStrategy {
       return when {
-        Build.VERSION.SDK_INT >= 26 -> OreoSetter()
-        Build.VERSION.SDK_INT >= 23 -> MarshmallowSetter()
-        Build.VERSION.SDK_INT >= 19 -> KitKatSetter()
-        else -> IceCreamSetter()
+        Build.VERSION.SDK_INT >= 26 -> {
+            Log.d(TAG, "OreoSetter()")
+            OreoSetter()
+
+        }
+        Build.VERSION.SDK_INT >= 23 -> {
+            Log.d(TAG, "MarshmallowSetter()")
+            MarshmallowSetter()
+        }
+        Build.VERSION.SDK_INT >= 19 -> {
+            Log.d(TAG, "KitKatSetter()")
+            KitKatSetter()
+        }
+        else -> {
+            Log.d(TAG, "IceCreamSetter()")
+            IceCreamSetter()
+        }
       }
     }
 
     private inner class IceCreamSetter : ISetAlarmStrategy {
       override fun setRTCAlarm(calendar: Calendar, pendingIntent: PendingIntent) {
+          Log.d(TAG, "IceCreamSetter setRTCAlarm am.set(")
         am.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
       }
 
       override fun setInexactAlarm(calendar: Calendar, pendingIntent: PendingIntent) {
+          Log.d(TAG, "IceCreamSetter setInexactAlarm am.set(")
         am.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
       }
     }
@@ -128,10 +146,12 @@ interface AlarmSetter {
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private inner class KitKatSetter : ISetAlarmStrategy {
       override fun setRTCAlarm(calendar: Calendar, pendingIntent: PendingIntent) {
+          Log.d(TAG, "KitKatSetter setRTCAlarm am.setExact(")
         am.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
       }
 
       override fun setInexactAlarm(calendar: Calendar, pendingIntent: PendingIntent) {
+          Log.d(TAG, "KitKatSetter setInexactAlarm am.setExact(")
         am.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
       }
     }
@@ -139,6 +159,7 @@ interface AlarmSetter {
     @TargetApi(23)
     private inner class MarshmallowSetter : ISetAlarmStrategy {
       override fun setRTCAlarm(calendar: Calendar, pendingIntent: PendingIntent) {
+          Log.d(TAG, "MarshmallowSetter setRTCAlarm am.setExactAndAllowWhileIdle")
         am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
       }
     }
@@ -147,6 +168,7 @@ interface AlarmSetter {
     @TargetApi(Build.VERSION_CODES.O)
     private inner class OreoSetter : ISetAlarmStrategy {
       override fun setRTCAlarm(calendar: Calendar, pendingIntent: PendingIntent) {
+          Log.d(TAG, "OreoSetter setRTCAlarm am.setAlarmClock(")
         val pendingShowList =
             PendingIntent.getActivity(
                 mContext,
@@ -158,6 +180,7 @@ interface AlarmSetter {
       }
 
       override fun setInexactAlarm(calendar: Calendar, pendingIntent: PendingIntent) {
+          Log.d(TAG, "setInexactAlarm am.setExactAndAllowWhileIdle(")
         am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
       }
     }

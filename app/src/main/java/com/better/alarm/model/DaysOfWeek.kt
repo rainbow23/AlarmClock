@@ -1,6 +1,7 @@
 package com.better.alarm.model
 
 import android.content.Context
+import android.util.Log
 import com.better.alarm.R
 import java.text.DateFormatSymbols
 import java.util.Calendar
@@ -41,15 +42,23 @@ data class DaysOfWeek(val coded: Int) {
   }
 
   private fun Int.isSet(): Boolean {
+     Log.d("Int.isSet()", "coded = $coded")
     return coded and (1 shl this) > 0
   }
 
   /** returns number of days from today until next alarm */
   fun getNextAlarm(today: Calendar): Int {
-    val todayIndex = (today.get(Calendar.DAY_OF_WEEK) + 5) % 7
+      val TAG = "getNextAlarm"
+
+      val todayIndex = (today.get(Calendar.DAY_OF_WEEK) + 5) % 7
+      today.get(Calendar.DAY_OF_WEEK)
+      Log.d(TAG, "today.get(Calendar.DAY_OF_WEEK = ${today.get(Calendar.DAY_OF_WEEK)}")
+      Log.d(TAG, "todayIndex = $todayIndex")
 
     return (0..6).firstOrNull { dayCount ->
       val day = (todayIndex + dayCount) % 7
+      Log.d(TAG, "dayCount = $dayCount")
+        Log.d(TAG, "day= $day")
       day.isSet()
     }
         ?: -1

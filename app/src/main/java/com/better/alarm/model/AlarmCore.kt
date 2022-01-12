@@ -17,6 +17,7 @@
 
 package com.better.alarm.model
 
+import android.util.Log
 import com.better.alarm.BuildConfig
 import com.better.alarm.configuration.Prefs
 import com.better.alarm.configuration.Store
@@ -338,6 +339,7 @@ class AlarmCore(
 
       inner class NormalSetState : AlarmState() {
         override fun onEnter(reason: Event) {
+            Log.d("NormalSetState", "onEnter( reason = $reason)")
           when (reason) {
             is Dismiss, is Snooze, is Change, is Enable -> {
               broadcastAlarmSetWithNormalTime(calculateNextTime().timeInMillis)
@@ -346,12 +348,14 @@ class AlarmCore(
         }
 
         override fun onResume() {
+            Log.d("NormalSetState", "onResume()")
           val nextTime = calculateNextTime()
           setAlarm(nextTime, CalendarType.NORMAL)
           showSkipNotification(nextTime)
         }
 
         override fun onFired() {
+            Log.d("NormalSetState", "onFired()")
           stateMachine.transitionTo(fired)
         }
 
@@ -385,6 +389,7 @@ class AlarmCore(
         }
 
         private fun calculateNextPrealarmTime(): Calendar {
+            Log.d(TAG, "calculateNextPrealarmTime():")
           return calculateNextTime().apply {
             add(Calendar.MINUTE, -1 * preAlarmDuration.blockingFirst())
             // since prealarm is before main alarm, it can be already in the
@@ -394,6 +399,7 @@ class AlarmCore(
         }
 
         override fun onFired() {
+            Log.d("PreAparmSetState", "onFired()")
           stateMachine.transitionTo(preAlarmFired)
         }
 
@@ -451,8 +457,10 @@ class AlarmCore(
       override fun onEnter(reason: Event) {
         updateListInStore()
       }
+        val TAG = this.javaClass.simpleName
 
       override fun onResume() {
+          Log.d("SkippingSetState", "onResume()")
         val nextTime = calculateNextTime()
         if (nextTime.after(calendars.now())) {
           mAlarmsScheduler.setInexactAlarm(id, nextTime)
@@ -460,7 +468,9 @@ class AlarmCore(
           val nextAfterSkip = calculateNextTime()
           nextAfterSkip.add(Calendar.DAY_OF_YEAR, 1)
           val addDays = container.daysOfWeek.getNextAlarm(nextAfterSkip)
+            Log.d(TAG, "addDays = $addDays")
           if (addDays > 0) {
+
             nextAfterSkip.add(Calendar.DAY_OF_WEEK, addDays)
           }
 
@@ -472,7 +482,8 @@ class AlarmCore(
       }
 
       override fun onFired() {
-        // yeah should never happen
+          Log.d("SkippingSetState", "onFired()")
+          // yeah should never happen
         stateMachine.transitionTo(fired)
       }
 
@@ -492,6 +503,7 @@ class AlarmCore(
     /** handles both snoozed and main for now */
     inner class FiredState : AlarmState() {
       override fun onEnter(reason: Event) {
+          Log.d("FiredState", "onEnter reason = $reason")
         broadcastAlarmState(Intents.ALARM_ALERT_ACTION)
         val autoSilenceMinutes = autoSilence.blockingFirst()
         if (autoSilenceMinutes > 0) {
@@ -503,7 +515,8 @@ class AlarmCore(
       }
 
       override fun onFired() {
-        broadcastAlarmState(Intents.ACTION_SOUND_EXPIRED)
+          Log.d("FiredState", "onFired()")
+          broadcastAlarmState(Intents.ACTION_SOUND_EXPIRED)
         // this is like a dismiss but we show an additional notification
         stateMachine.transitionTo(rescheduleTransition)
       }
@@ -525,7 +538,8 @@ class AlarmCore(
       }
 
       override fun onFired() {
-        stateMachine.transitionTo(fired)
+          Log.d("PreAlarmFiredState", "onFired()")
+          stateMachine.transitionTo(fired)
       }
 
       override fun onSnooze(snooze: Snooze) {
@@ -590,6 +604,7 @@ class AlarmCore(
       }
 
       override fun onFired() {
+          Log.d(TAG, "SnoozedState onFired()")
         stateMachine.transitionTo(fired)
       }
 
@@ -668,8 +683,10 @@ class AlarmCore(
   private fun writeChangeData(data: AlarmValue) {
     alarmStore.modify { withChangeData(data) }
   }
+    val TAG = this.javaClass.simpleName
 
   private fun calculateNextTime(): Calendar {
+      Log.d(TAG, "calculateNextTime()")
     return calendars.now().apply {
       set(Calendar.HOUR_OF_DAY, container.hour)
       set(Calendar.MINUTE, container.minutes)
@@ -686,7 +703,8 @@ class AlarmCore(
       add(Calendar.DAY_OF_YEAR, 1)
     }
     val addDays = container.daysOfWeek.getNextAlarm(this)
-    if (addDays > 0) {
+      Log.d("Calendar.advanceCalendar()", "addDays = $addDays")
+      if (addDays > 0) {
       add(Calendar.DAY_OF_WEEK, addDays)
     }
   }

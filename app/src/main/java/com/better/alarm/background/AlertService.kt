@@ -1,6 +1,7 @@
 package com.better.alarm.background
 
 import android.app.Notification
+import android.util.Log
 import com.better.alarm.BuildConfig
 import com.better.alarm.interfaces.IAlarmsManager
 import com.better.alarm.interfaces.Intents
@@ -161,8 +162,10 @@ class AlertService(
   private fun soundAlarm(id: Int, type: Type) {
     activeAlarms.modify { plus(id to type) }
   }
+    val TAG = this.javaClass.simpleName
 
   private fun showNotifications(active: Map<Int, Type>) {
+      Log.d(TAG, "showNotifications")
     require(active.isNotEmpty())
     val toShow =
         active.mapNotNull { (id, _) -> alarms.getAlarm(id) }.map { alarm ->
